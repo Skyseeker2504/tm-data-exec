@@ -1,5 +1,6 @@
-import os, sqlite3, pathlib, re
-from pptx import Presentation  # pip install python-pptx (optional if you index PPT)
+# index_builder.py
+import os, sqlite3, pathlib
+from pptx import Presentation  # pip install python-pptx
 
 def ensure_schema(dbfile):
     con = sqlite3.connect(dbfile)
@@ -9,10 +10,11 @@ def ensure_schema(dbfile):
     con.commit(); con.close()
 
 def add_doc(dbfile, path, title, body):
-    con = sqlite3.connect(dbfile); c = con.cursor()
-    c.execute("INSERT INTO docs(path,title,body) VALUES (?,?,?)",(path,title,body))
+    con = sqlite3.connect(dbfile)
+    c = con.cursor()
+    c.execute("INSERT INTO docs(path,title,body) VALUES (?,?,?)", (path, title, body))
     rowid = c.lastrowid
-    c.execute("INSERT INTO docs_fts(rowid, body) VALUES (?,?)",(rowid, body))
+    c.execute("INSERT INTO docs_fts(rowid, body) VALUES (?,?)", (rowid, body))
     con.commit(); con.close()
 
 def extract_text_from_pptx(pth):
@@ -29,21 +31,14 @@ def walk_and_index(dbfile, root, kind="text"):
     for dirpath, _, filenames in os.walk(root):
         for f in filenames:
             p = pathlib.Path(dirpath, f)
-            text = ""
-            title = p.stem
+            text, title = "", p.stem
             try:
                 if kind=="ppt" and p.suffix.lower()==".pptx":
                     text = extract_text_from_pptx(p)
                 elif kind in ("text","media"):
-                    # assume .txt/.vtt exported transcripts or OCRed PDFs to .txt
-                    if p.suffix.lower() in [".txt",".vtt"]: text = p.read_text(encoding="utf-8", errors="ignore")
+                    if p.suffix.lower() in [".txt",".vtt"]:
+                        text = p.read_text(encoding="utf-8", errors="ignore")
                 if text.strip():
                     add_doc(dbfile, str(p), title, text)
             except Exception as e:
                 print("skip", p, e)
-
-if __name__ == "__main__":
-    # Example usage:
-    walk_and_index("indices/text_bm25.sqlite",  "D:/knowledgebase", kind="text")
-    walk_and_index("indices/ppt_bm25.sqlite",   "D:/slides",        kind="ppt")
-    walk_and_index("indices/media_bm25.sqlite", "D:/videos_txt",    kind="media")

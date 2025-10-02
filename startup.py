@@ -1,12 +1,17 @@
+# startup.py
 import os, pathlib
 from index_builder import walk_and_index
 
 os.makedirs("indices", exist_ok=True)
 
+TEXT_ROOT  = os.getenv("TEXT_ROOT",  "E:/data_growth_agent/texts")
+PPT_ROOT   = os.getenv("PPT_ROOT",   "E:/data_growth_agent/ppt")
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", "E:/data_growth_agent/media_txt")
+
 targets = [
-    ("indices/text_bm25.sqlite",  "docs/text",  "text"),
-    ("indices/ppt_bm25.sqlite",   "docs/ppt",   "ppt"),
-    ("indices/media_bm25.sqlite", "docs/media", "media"),
+    ("indices/text_bm25.sqlite",  TEXT_ROOT,  "text"),
+    ("indices/ppt_bm25.sqlite",   PPT_ROOT,   "ppt"),
+    ("indices/media_bm25.sqlite", MEDIA_ROOT, "media"),
 ]
 
 for dbfile, root, kind in targets:
